@@ -21,7 +21,7 @@ lora_models = {}  # "My_Lora(abcdef123456)" -> "C:/path/to/model.safetensors"
 lora_model_names = {}  # "my_lora" -> "My_Lora(My_Lora(abcdef123456)"
 legacy_model_names = {}
 # lora_models_dir = os.path.join(scripts.basedir(), "models/lora")
-lora_models_dir = "models/Lora"
+lora_models_dir = "user-models/Lora"
 os.makedirs(lora_models_dir, exist_ok=True)
 
 
