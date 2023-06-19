@@ -20,7 +20,7 @@ re_legacy_hash = re.compile("\(([0-9a-f]{8})\)$")  # matches 8-character hashes,
 lora_models = {}  # "My_Lora(abcdef123456)" -> "C:/path/to/model.safetensors"
 lora_model_names = {}  # "my_lora" -> "My_Lora(My_Lora(abcdef123456)"
 legacy_model_names = {}
-lora_models_dir = os.path.join(os.path.dirname(paths.user_models_path), "user-models/Lora")
+lora_models_dir = os.path.join(paths.user_models_path, "Lora")
 os.makedirs(lora_models_dir, exist_ok=True)
 
 
