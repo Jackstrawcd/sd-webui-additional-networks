@@ -6,11 +6,15 @@ import json
 import hashlib
 import safetensors
 import safetensors.torch
+import logging
 
 from modules import sd_models
 
 # PyTorch 1.13 and later have _UntypedStorage renamed to UntypedStorage
-UntypedStorage = torch.storage.UntypedStorage if hasattr(torch.storage, 'UntypedStorage') else torch.storage._UntypedStorage
+UntypedStorage = torch.storage.UntypedStorage if hasattr(torch.storage,
+                                                         'UntypedStorage') else torch.storage._UntypedStorage
+logging.basicConfig(level=logging.INFO,format='[%(asctime)s] [%(module)s | %(filename)s | line:%(lineno)d] [%(levelname)s] : %(message)s')
+
 
 def read_metadata(filename):
     """Reads the JSON metadata from a .safetensors file"""
@@ -75,19 +79,23 @@ def legacy_hash_file(filename):
     # updates the name/description/etc. The new hashing method fixes this
     # problem by only hashing the region of the file containing the tensors.
     if any(not k.startswith("ss_") for k in metadata):
-      # Strip the user metadata, re-serialize the file as if it were freshly
-      # created from sd-scripts, and hash that with model_hash's behavior.
-      tensors, metadata = load_file(filename, "cpu")
-      metadata = {k: v for k, v in metadata.items() if k.startswith("ss_")}
-      model_bytes = safetensors.torch.save(tensors, metadata)
-
-      hash_sha256.update(model_bytes[0x100000:0x110000])
-      return hash_sha256.hexdigest()[0:8]
+        # Strip the user metadata, re-serialize the file as if it were freshly
+        # created from sd-scripts, and hash that with model_hash's behavior.
+        try:
+            tensors, metadata = load_file(filename, "cpu")
+            metadata = {k: v for k, v in metadata.items() if k.startswith("ss_")}
+            model_bytes = safetensors.torch.save(tensors, metadata)
+            hash_sha256.update(model_bytes[0x100000:0x110000])
+            return hash_sha256.hexdigest()[0:8]
+        except Exception as e:
+            logging.error("模型<{filename}>异常不可用：请及时删除·········")
+            logging.exception(f"加载模型<{filename}> 失败,使用sd_models.model_hash() 方法,以下仅为堆栈信息跟踪")
+            return sd_models.model_hash(filename)
     else:
-      # This should work fine with model_hash since when the legacy hashing
-      # method was being used the user metadata system hadn't been implemented
-      # yet.
-      return sd_models.model_hash(filename)
+        # This should work fine with model_hash since when the legacy hashing
+        # method was being used the user metadata system hadn't been implemented
+        # yet.
+        return sd_models.model_hash(filename)
 
 
 DTYPES = {
@@ -113,4 +121,5 @@ def create_tensor(storage, info, offset):
     dtype = DTYPES[info["dtype"]]
     shape = info["shape"]
     start, stop = info["data_offsets"]
-    return torch.asarray(storage[start + offset : stop + offset], dtype=torch.uint8).view(dtype=dtype).reshape(shape).clone().detach()
+    return torch.asarray(storage[start + offset: stop + offset], dtype=torch.uint8).view(dtype=dtype).reshape(
+        shape).clone().detach()
